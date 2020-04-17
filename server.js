@@ -11,6 +11,9 @@ let passport = require('passport');
 // Express app creation
 const app = express();
 
+//socket io 
+const server = require('http').Server(app);
+const io = require('socket.io')(server);
 
 // Configurations
 const appConfig = require('./configs/app');
@@ -47,10 +50,28 @@ app.use(passport.session());
 // Receive parameters from the Form requests
 app.use(express.urlencoded({ extended: true }))
 
+app.use('/', express.static(__dirname+"/public"));
+
 // Routes
 app.use('/', webRoutes);
+io.on('connection', (socket) =>{
+  console.log('usuario conectado');
+  let i = 0;
+  setInterval(() => {
+    socket.emit(() => {
+      socket.emit('toast', {message: "Mensaje: "+i});
+      i++;
+    }, 1000);
+    
+  });
+  socket.on('message-to-server', (data) => {
+    console.log('message received: ', data);
+  });
+
+  
+}); 
 
 // App init
-app.listen(appConfig.expressPort, () => {
+server.listen(appConfig.expressPort, () => {
   console.log(`Server is listenning on ${appConfig.expressPort}! (http://localhost:${appConfig.expressPort})`);
 });
