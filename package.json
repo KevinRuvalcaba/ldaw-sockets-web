@@ -19,6 +19,7 @@
     "express-session": "^1.17.0",
     "express-validator": "^6.4.0",
     "handlebars-helpers": "^0.10.0",
+    "jquery": "^3.5.0",
     "knex": "^0.20.11",
     "mysql2": "^2.1.0",
     "passport": "^0.4.1",

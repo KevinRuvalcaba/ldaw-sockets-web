@@ -1,23 +1,44 @@
 <main role="main" class="container">
   <div class="row">
     <div class="col-12">
-      <input 
-        type="button" 
-        value="send toast" 
-        class="btn btn-success"
-        onclick="showToast('mensaje kool')"
-      >
-
+      <label id="player"> </label>
     </div>
   </div>
 
   <div class="row">
     <div class="col-12">
-      <input 
+      <label id="letra"> </label>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-12">
+      <label> Nombre</label>
+      <input type="text" id="nombre">
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-12">
+      <label>Color</label>
+      <input type="text" id="color">
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-12">
+      <label>Furto</label>
+      <input type="text" id="fruto">
+    </div>
+  </div>
+   <div class="row">
+    <div class="col-12">
+      <input
+        id="btn" 
         type="button" 
-        value="send message to server" 
+        value="BASTA!!" 
         class="btn btn-success"
-        onclick="messageToServer('mensaje desde el cliente')"
+        onclick="sendBasta()"
       >
 
     </div>

@@ -1,6 +1,9 @@
 // Imports
 const express = require('express');
 const webRoutes = require('./routes/web');
+var $ = require('jquery');
+const Player = require("./classes/player");
+const Game = require("./classes/game");
 
 // Session imports
 let cookieParser = require('cookie-parser');
@@ -52,22 +55,81 @@ app.use(express.urlencoded({ extended: true }))
 
 app.use('/', express.static(__dirname+"/public"));
 
+currentGame = new Game(1);
+var allClients = [];
+
+MaxPlayerID = 1;
 // Routes
 app.use('/', webRoutes);
 io.on('connection', (socket) =>{
+  allClients.push(socket);
   console.log('usuario conectado');
-  let i = 0;
-  setInterval(() => {
-    socket.emit(() => {
-      socket.emit('toast', {message: "Mensaje: "+i});
-      i++;
-    }, 1000);
+  player = new Player(currentGame.players.length+1);
+  socket.emit('toast', {message: "HOLA AMIGO, eres el jugador: "+MaxPlayerID});
+  socket.broadcast.emit('broadcast',  {description: MaxPlayerID+' numero de personas'});
+  MaxPlayerID++;
+  console.log('Player id ', player.id);
+  socket.emit('setName', {msg: player.id})
+
+
+  socket.on('send-basta', (nombre, color, fruto) => {
+    socket.emit('toast', {message: "SE INICIO UN BASTA"});
+    socket.broadcast.emit('toast', {message: "SE INICIO UN BASTA"});
+    socket.broadcast.emit('triggerBasta', {});
+    var run = async function() {  
+      for(var i=1;i<=10;i++){
+        socket.emit('toast', {message: "BASTA "+i});
+        socket.broadcast.emit('toast', {message: "BASTA "+i});
+        await sleep(1000);
+      }
+      console.log('hello');
+      socket.emit('toast', {message: "EMPIEZA UN NUEVO ROUND"});
+      socket.broadcast.emit('toast', {message: "EMPIEZA UN NUEVO ROUND"});
+
+      const letter = currentGame.displayLetter()
+      currentGame.isActive = true;
+
+      socket.broadcast.emit('evaluatePlayer', {});
+      socket.emit('evaluatePlayer', {});
+
+      currentGame.players = allClients;
+      socket.broadcast.emit('newLetter', {letter: letter});
+      socket.emit('newLetter', {letter: letter});
+      socket.broadcast.emit('freeButton', {});
+    }
+    run();   
     
   });
-  socket.on('message-to-server', (data) => {
-    console.log('message received: ', data);
+
+  socket.on("send-results", (data) => { 
+    console.log('made it to results');
+    console.log(currentGame.victoryMSG);
+    console.log(data);
+    currentGame.calculateWinner(data.nombre, data.color, data.fruto, data.player);
+    if(currentGame.victoryMSG !== ''){
+      console.log(currentGame.victoryMSG);
+      socket.broadcast.emit('alert', {msg: currentGame.victoryMSG});
+      socket.emit('alert', {msg: currentGame.victoryMSG});
+      currentGame.victoryMSG = '';
+    } 
+    
   });
 
+  if(!currentGame.isActive){
+    socket.emit('toast', {message: "Ya te uniste al juego"});
+    
+    currentGame.addPlayer(player.id);
+  } else {
+    socket.emit('toast', {message: "Ya hay un juego en proceso.... esperate !!"});
+  }
+  //console.log(currentGame.players.length);
+  if(currentGame.players.length >= 2 && !currentGame.isActive){
+    const letter = currentGame.displayLetter()
+    currentGame.isActive = true;
+    socket.broadcast.emit('newLetter', {letter: letter});
+    socket.emit('newLetter', {letter: letter});
+
+  }
   
 }); 
 
@@ -75,3 +137,9 @@ io.on('connection', (socket) =>{
 server.listen(appConfig.expressPort, () => {
   console.log(`Server is listenning on ${appConfig.expressPort}! (http://localhost:${appConfig.expressPort})`);
 });
+
+
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
