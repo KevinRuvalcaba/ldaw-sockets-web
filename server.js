@@ -57,14 +57,15 @@ app.use('/', express.static(__dirname+"/public"));
 
 currentGame = new Game(1);
 var allClients = [];
-
-MaxPlayerID = 1;
+var gone = 0;
+var MaxPlayerID = 1;
 // Routes
 app.use('/', webRoutes);
 io.on('connection', (socket) =>{
   allClients.push(socket);
+  console.log('new commer ',allClients.length);
   console.log('usuario conectado');
-  player = new Player(currentGame.players.length+1);
+  player = new Player(MaxPlayerID);
   socket.emit('toast', {message: "HOLA AMIGO, eres el jugador: "+MaxPlayerID});
   socket.broadcast.emit('broadcast',  {description: MaxPlayerID+' numero de personas'});
   MaxPlayerID++;
@@ -73,6 +74,9 @@ io.on('connection', (socket) =>{
 
 
   socket.on('send-basta', (nombre, color, fruto) => {
+    currentGame.players = allClients;
+    console.log('peeee',currentGame.players.length);
+    console.log('poooooo',allClients.length);
     socket.emit('toast', {message: "SE INICIO UN BASTA"});
     socket.broadcast.emit('toast', {message: "SE INICIO UN BASTA"});
     socket.broadcast.emit('triggerBasta', {});
@@ -101,11 +105,26 @@ io.on('connection', (socket) =>{
     
   });
 
+  socket.on('disconnect', () => {
+    console.log('Got disconnect!');
+    //var i = allClients.indexOf(socket);
+    console.log('before ',allClients.length);
+    //allClients.splice(i, 1);
+    allClients.pop();
+    gone++;
+    currentGame.players = allClients;
+    console.log('after ',allClients.length);
+    if(currentGame.players.length < 2){
+      socket.broadcast.emit('triggerBasta', {});
+      currentGame.isActive = false;
+    }
+  });
+
   socket.on("send-results", (data) => { 
     console.log('made it to results');
     console.log(currentGame.victoryMSG);
     console.log(data);
-    currentGame.calculateWinner(data.nombre, data.color, data.fruto, data.player);
+    currentGame.calculateWinner(data.nombre, data.color, data.fruto, data.player, allClients.length - gone);
     if(currentGame.victoryMSG !== ''){
       console.log(currentGame.victoryMSG);
       socket.broadcast.emit('alert', {msg: currentGame.victoryMSG});
@@ -120,10 +139,12 @@ io.on('connection', (socket) =>{
     
     currentGame.addPlayer(player.id);
   } else {
+    socket.emit('triggerBasta', {});
     socket.emit('toast', {message: "Ya hay un juego en proceso.... esperate !!"});
   }
   //console.log(currentGame.players.length);
   if(currentGame.players.length >= 2 && !currentGame.isActive){
+    socket.broadcast.emit('freeButton', {});
     const letter = currentGame.displayLetter()
     currentGame.isActive = true;
     socket.broadcast.emit('newLetter', {letter: letter});

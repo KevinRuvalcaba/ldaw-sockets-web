@@ -11,7 +11,7 @@ class Game {
     }
 
 
-    calculateWinner(nombre, color, fruto, playerId) {
+    calculateWinner(nombre, color, fruto, playerId, totals) {
         
         nombre = nombre? nombre:"";
         color = color? color:"";
@@ -19,10 +19,10 @@ class Game {
         this.results[playerId] = [nombre,color, fruto];
         console.log(playerId);
         console.log(this.results);
-        console.log('players length: ',this.players.length);
+        console.log('players length: ', totals);
         console.log('results length: ', Object.keys(this.results).length);
-        console.log('comparation: ', Object.keys(this.results).length >= this.players.length);
-        if(Object.keys(this.results).length >= this.players.length){
+        console.log('comparation: ', Object.keys(this.results).length >= totals);
+        if(Object.keys(this.results).length >= totals){
             var mySet = {};
             let scores = {};
             Object.keys(this.results).forEach(e => {
